@@ -22,11 +22,12 @@ type ProbeResponse struct {
 }
 
 func PostSolution(speed int) {
+	baseUrl := os.Getenv("API_URL")
 	body := []byte(`{
-		"speed": `+ strconv.Itoa(speed) +`,
-		
+		"speed": "`+ strconv.Itoa(speed) +`"	
 	}`)
-	request, err := http.NewRequest("POST", "https://makers-challenge.altscore.ai/v1/s1/e1/solution", bytes.NewBuffer(body))
+	
+	request, err := http.NewRequest("POST", baseUrl+"/v1/s1/e1/solution", bytes.NewBuffer(body))
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +50,7 @@ func PostSolution(speed int) {
 	fmt.Println("Response Status: ", string(bodyResp))
 }
 
-func GetProbeResponse(tick time.Time) ProbeResponse{
+func GetProbeResponse() ProbeResponse{
 	baseUrl := os.Getenv("API_URL")
  	req, err := http.NewRequest("Get", baseUrl + "/v1/s1/e1/resources/measurement", nil)
 	if err != nil {
@@ -85,27 +86,22 @@ func GetProbeResponse(tick time.Time) ProbeResponse{
 	if err !=nil {
 		panic(err)
 	}	
-	time.Sleep(1*time.Second)
 	return probeResp
 }
 
 
 func main() {
 	godotenv.Load()
-	ticker := time.NewTicker(1 * time.Second)
-	go func() {
-		for t := range ticker.C {
-			probeResp := GetProbeResponse(t)			
-			fmt.Println("distance: ", probeResp.DistanceQ)			
-			fmt.Println("time: ", probeResp.TimeQ)
-			if probeResp.DistanceQ > 0 && probeResp.TimeQ > 0 {				
-				velocity := probeResp.DistanceQ / probeResp.TimeQ
-				fmt.Println("Speed Round", math.Round(velocity))
-				ticker.Stop()
-			}
-		}
-	}()
 	for {
-		time.Sleep(100 * time.Millisecond)
-	}	
+		fmt.Println("Checking Probe...")
+		time.Sleep(500 * time.Millisecond)
+		probeResp := GetProbeResponse()
+		if probeResp.DistanceQ > 0 && probeResp.TimeQ > 0 {
+			velocity := probeResp.DistanceQ / probeResp.TimeQ
+			fmt.Println("Speed Round", math.Round(velocity))
+			PostSolution(int(math.Round(velocity)))
+			break
+		}		
+	}
+	fmt.Println("Probe finish receiving!")		
 }
