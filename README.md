@@ -1,5 +1,5 @@
 # MappaE1
-### Excersice for Season 1
+### Excersice for Episode 1
 Create an .env
 ```
 API_KEY=<KEY>
